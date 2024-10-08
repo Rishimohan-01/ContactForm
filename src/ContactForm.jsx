@@ -4,10 +4,13 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import ReCAPTCHA from "react-google-recaptcha";
 import "./ContactForm.css";
 import * as Yup from "yup";
+import axios from "axios";
 // import { db } from "./firebaseConfig";
 // import { collection, addDoc } from "firebase/firestore";
 
 const ContactForm = () => {
+  const initialValues = { name: "", email: "", message: "", captcha: false };
+
   const SITE_KEY = "6LdMO1oqAAAAAAbszVOebgwNO4XTm8PfW0GDFgkA"; //6LdMO1oqAAAAAAbszVOebgwNO4XTm8PfW0GDFgkA
 
   const validationSchema = Yup.object({
@@ -17,17 +20,33 @@ const ContactForm = () => {
     captcha: Yup.string().required("Please confirm you are not a robot"),
   });
 
-  const handleSubmit = (values, { setSubmitting, resetForm }) => {
-    console.log("Form Values:", values);
-    resetForm();
-    setSubmitting(false);
+  //   const handleSubmit = (values, { setSubmitting, resetForm }) => {
+  //     console.log("Form Values:", values);
+  //     resetForm();
+  //     setSubmitting(false);
+  //   };
+
+  const handleSubmit = async (values, { setSubmitting, resetForm }) => {
+    try {
+      const response = await axios.post(
+        "https://contactsforms.firebaseapp.com/",
+        values
+      );
+      console.log("Response from Firebase:", response.data);
+      resetForm();
+    } catch (error) {
+      console.error("Error submitting form data:", error.message);
+      alert("Submission failed. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="contact-form-container">
       <h2>Contact Us</h2>
       <Formik
-        initialValues={{ name: "", email: "", message: "", captcha: false }}
+        initialValues={initialValues}
         validationSchema={validationSchema}
         validate={(values) => {
           const errors = {};
@@ -73,7 +92,7 @@ const ContactForm = () => {
             </div>
             <div className="form-field captcha-field">
               <ReCAPTCHA
-                sitekey={SITE_KEY} // Replace with your reCAPTCHA site key
+                sitekey={SITE_KEY}
                 onChange={(value) => setFieldValue("captcha", !!value)}
               />
               <ErrorMessage

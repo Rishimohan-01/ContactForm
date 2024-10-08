@@ -1,11 +1,18 @@
 {
   "hosting": {
+    "site": "contactsforms",
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
         "source": "**",
-        "destination": "/index.html"
+        "destination": "/index.html",
+        "headers": [
+          {
+            "key": "Access-Control_Allow-Origin",
+            "value": "*"
+          }
+        ]
       }
     ]
   }
