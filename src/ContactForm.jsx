@@ -1,15 +1,19 @@
-/* eslint-disable no-unused-vars */
-import React from "react";
+import { useState, useRef } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import ReCAPTCHA from "react-google-recaptcha";
 import "./ContactForm.css";
 import * as Yup from "yup";
 import axios from "axios";
-// import { db } from "./firebaseConfig";
-// import { collection, addDoc } from "firebase/firestore";
 
 const ContactForm = () => {
   const initialValues = { name: "", email: "", message: "", captcha: false };
+
+  const [captchaToken, setCaptchaToken] = useState(null);
+  const captchaRef = useRef(null);
+
+  const onChange = (token) => {
+    setCaptchaToken(token);
+  };
 
   const SITE_KEY = "6LdMO1oqAAAAAAbszVOebgwNO4XTm8PfW0GDFgkA"; //6LdMO1oqAAAAAAbszVOebgwNO4XTm8PfW0GDFgkA
 
@@ -20,20 +24,30 @@ const ContactForm = () => {
     captcha: Yup.string().required("Please confirm you are not a robot"),
   });
 
-  //   const handleSubmit = (values, { setSubmitting, resetForm }) => {
-  //     console.log("Form Values:", values);
-  //     resetForm();
-  //     setSubmitting(false);
-  //   };
-
-  const handleSubmit = async (values, { setSubmitting, resetForm }) => {
+  const handleSubmit = async (e, values, { setSubmitting, resetForm }) => {
+    e.preventDefault();
+    if (!captchaToken) {
+      alert("Please complete the reCAPTCHA!");
+      return;
+    }
+    const token = captchaRef.current.getValue();
+    captchaRef.current.reset();
     try {
       const response = await axios.post(
-        "https://contactsforms.firebaseapp.com/",
+        "https://4e921e09-2d17-4881-ba6b-cc0a77001f0a.mock.pstmn.io",
+        { captchaToken },
         values
       );
-      console.log("Response from Firebase:", response.data);
-      resetForm();
+      if (response.data.success) {
+        // ReCAPTCHA verification successful, handle the response
+        alert("Form Submitted successfully!");
+        console.log("Form Submitted successfully!", response.data);
+        resetForm();
+      } else {
+        // ReCAPTCHA verification failed, handle the error
+        alert("ReCAPTCHA verification failed. Please try again.");
+        console.error("ReCAPTCHA verification failed:", response.data.error);
+      }
     } catch (error) {
       console.error("Error submitting form data:", error.message);
       alert("Submission failed. Please try again.");
@@ -41,7 +55,6 @@ const ContactForm = () => {
       setSubmitting(false);
     }
   };
-
   return (
     <div className="contact-form-container">
       <h2>Contact Us</h2>
@@ -93,7 +106,13 @@ const ContactForm = () => {
             <div className="form-field captcha-field">
               <ReCAPTCHA
                 sitekey={SITE_KEY}
-                onChange={(value) => setFieldValue("captcha", !!value)}
+                useRef={captchaRef}
+                onChange={
+                  (onChange,
+                  (value) => {
+                    setFieldValue("captcha", !!value);
+                  })
+                }
               />
               <ErrorMessage
                 name="captcha"
